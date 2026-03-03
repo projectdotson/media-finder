@@ -184,7 +184,7 @@
             <h1>🔍 Media Finder</h1>
             <p class="subtitle">Upload a photo and discover related content across the web</p>
             <div class="model-status loading" id="model-status">
-                ⏳ Loading AI model... (first time may take 30-60s)
+                ⏳ Loading AI model... (first time ~1-2 min, 400MB download)
                 <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
             </div>
         </header>
@@ -265,7 +265,7 @@
         // Load model
         async function loadModel() {
             try {
-                captioner = await pipeline('image-to-text', 'Xenova/vit-gpt2-image-captioning', {
+                captioner = await pipeline('image-to-text', 'Xenova/blip-image-captioning-large', {
                     progress_callback: (progress) => {
                         if (progress.status === 'progress' && progress.progress) {
                             progressFill.style.width = `${Math.round(progress.progress)}%`;
