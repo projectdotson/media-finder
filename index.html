@@ -265,13 +265,10 @@
         // Load model
         async function loadModel() {
             try {
-                captioner = await pipeline('image-to-text', 'Xenova/blip-image-captioning-base', {
+                captioner = await pipeline('image-to-text', 'Xenova/vit-gpt2-image-captioning', {
                     progress_callback: (progress) => {
                         if (progress.status === 'progress' && progress.progress) {
                             progressFill.style.width = `${Math.round(progress.progress)}%`;
-                        }
-                        if (progress.status === 'download') {
-                            modelStatus.querySelector('span') || (modelStatus.innerHTML = `⏳ Downloading: ${progress.file || 'model files'}... <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>`);
                         }
                     }
                 });
@@ -283,7 +280,7 @@
             } catch (e) {
                 console.error('Model load error:', e);
                 modelStatus.className = 'model-status error';
-                modelStatus.innerHTML = '❌ Failed to load AI model. <button onclick="location.reload()" style="background:#e94560;color:white;border:none;padding:5px 15px;border-radius:5px;cursor:pointer;margin-left:10px;">Retry</button>';
+                modelStatus.innerHTML = `❌ Error: ${e.message || 'Unknown error'}. <button onclick="location.reload()" style="background:#e94560;color:white;border:none;padding:5px 15px;border-radius:5px;cursor:pointer;margin-left:10px;">Retry</button>`;
             }
         }
         
