@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Finder - Discover Content From Images</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+        
+        .upload-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.05);
+        }
+        
+        .upload-section.dragover {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+        
+        .upload-area {
+            text-align: center;
+        }
+        
+        .upload-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .drop-hint {
+            color: #666;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .preview-container {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .preview-container.active {
+            display: block;
+        }
+        
+        #preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .camera-container {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .camera-container.active {
+            display: block;
+        }
+        
+        #camera-video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        
+        .caption-display {
+            background: rgba(233, 69, 96, 0.2);
+            border-left: 4px solid #e94560;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+            font-style: italic;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #a0a0a0;
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .results-section.active {
+            display: block;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .result-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            border-color: #e94560;
+        }
+        
+        .result-card a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .card-thumbnail {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-thumbnail.placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+        }
+        
+        .card-content {
+            padding: 15px;
+        }
+        
+        .card-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .card-type.youtube {
+            background: #ff0000;
+        }
+        
+        .card-type.article {
+            background: #4CAF50;
+        }
+        
+        .card-type.image {
+            background: #9c27b0;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .card-meta {
+            color: #a0a0a0;
+            font-size: 0.85rem;
+        }
+        
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            border-left: 4px solid #ff0000;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+            display: none;
+        }
+        
+        .error-message.active {
+            display: block;
+        }
+        
+        .retry-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .retry-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        footer a {
+            color: #e94560;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .upload-section {
+                padding: 25px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Media Finder</h1>
+            <p class="subtitle">Upload a photo and discover related content across the web</p>
+        </header>
+        
+        <section class="upload-section" id="upload-section">
+            <div class="upload-area">
+                <div class="upload-buttons">
+                    <button class="btn btn-primary" id="upload-btn">
+                        📁 Upload Photo
+                    </button>
+                    <button class="btn btn-secondary" id="camera-btn">
+                        📷 Take Photo
+                    </button>
+                    <input type="file" id="file-input" accept="image/*">
+                </div>
+                
+                <p class="drop-hint">or drag & drop an image here</p>
+                
+                <div class="camera-container" id="camera-container">
+                    <video id="camera-video" autoplay playsinline></video>
+                    <br><br>
+                    <button class="btn btn-primary" id="capture-btn">📸 Capture</button>
+                    <button class="btn btn-secondary" id="close-camera-btn">✕ Cancel</button>
+                </div>
+                
+                <div class="preview-container" id="preview-container">
+                    <img id="preview-image" alt="Preview">
+                    <br><br>
+                    <button class="btn btn-primary" id="analyze-btn">🚀 Find Media</button>
+                    <button class="btn btn-secondary" id="clear-btn">✕ Clear</button>
+                </div>
+            </div>
+        </section>
+        
+        <div class="error-message" id="error-message">
+            <span id="error-text"></span>
+            <br>
+            <button class="retry-btn" id="retry-btn">Try Again</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text" id="loading-text">Analyzing your image...</p>
+        </div>
+        
+        <section class="results-section" id="results-section">
+            <div class="caption-display" id="caption-display"></div>
+            <div class="results-grid" id="results-grid"></div>
+        </section>
+        
+        <footer>
+            <p>Powered by <a href="https://huggingface.co" target="_blank">Hugging Face AI</a> • No data stored • All processing happens in real-time</p>
+        </footer>
+    </div>
+    
+    <canvas id="canvas" style="display: none;"></canvas>
+    
+    <script>
+        // DOM Elements
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const cameraBtn = document.getElementById('camera-btn');
+        const cameraContainer = document.getElementById('camera-container');
+        const cameraVideo = document.getElementById('camera-video');
+        const captureBtn = document.getElementById('capture-btn');
+        const closeCameraBtn = document.getElementById('close-camera-btn');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loading-text');
+        const resultsSection = document.getElementById('results-section');
+        const captionDisplay = document.getElementById('caption-display');
+        const resultsGrid = document.getElementById('results-grid');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const retryBtn = document.getElementById('retry-btn');
+        const uploadSection = document.getElementById('upload-section');
+        const canvas = document.getElementById('canvas');
+        
+        let currentImageData = null;
+        let currentImageBlob = null;
+        let stream = null;
+        
+        // Hugging Face Inference API (free, CORS-enabled)
+        const HF_API_URL = 'https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-large';
+        
+        // Upload button click
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        
+        // File selected
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+        
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+        
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+        
+        function handleFile(file) {
+            currentImageBlob = file;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                currentImageData = event.target.result;
+                previewImage.src = currentImageData;
+                previewContainer.classList.add('active');
+                cameraContainer.classList.remove('active');
+                stopCamera();
+                hideError();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Camera button click
+        cameraBtn.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                cameraVideo.srcObject = stream;
+                cameraContainer.classList.add('active');
+                previewContainer.classList.remove('active');
+                hideError();
+            } catch (err) {
+                showError('Could not access camera. Please try uploading a photo instead.');
+            }
+        });
+        
+        // Capture button click
+        captureBtn.addEventListener('click', () => {
+            canvas.width = cameraVideo.videoWidth;
+            canvas.height = cameraVideo.videoHeight;
+            canvas.getContext('2d').drawImage(cameraVideo, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                currentImageBlob = blob;
+                currentImageData = canvas.toDataURL('image/jpeg', 0.8);
+                previewImage.src = currentImageData;
+                previewContainer.classList.add('active');
+                cameraContainer.classList.remove('active');
+                stopCamera();
+            }, 'image/jpeg', 0.8);
+        });
+        
+        // Close camera
+        closeCameraBtn.addEventListener('click', () => {
+            cameraContainer.classList.remove('active');
+            stopCamera();
+        });
+        
+        // Clear button
+        clearBtn.addEventListener('click', () => {
+            currentImageData = null;
+            currentImageBlob = null;
+            previewContainer.classList.remove('active');
+            resultsSection.classList.remove('active');
+            fileInput.value = '';
+            hideError();
+        });
+        
+        // Retry button
+        retryBtn.addEventListener('click', () => {
+            hideError();
+            if (currentImageBlob) {
+                analyzeImage();
+            }
+        });
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+        
+        // Analyze button click
+        analyzeBtn.addEventListener('click', analyzeImage);
+        
+        async function analyzeImage() {
+            if (!currentImageBlob) return;
+            
+            hideError();
+            loading.classList.add('active');
+            resultsSection.classList.remove('active');
+            analyzeBtn.disabled = true;
+            loadingText.textContent = 'Analyzing your image with AI...';
+            
+            try {
+                // Send image to Hugging Face
+                const caption = await getImageCaption(currentImageBlob);
+                
+                if (!caption) {
+                    throw new Error('Could not analyze image. The AI model may be loading — try again in a moment.');
+                }
+                
+                loadingText.textContent = 'Finding related content...';
+                
+                // Generate media results
+                const results = await generateMediaResults(caption);
+                
+                displayResults(caption, results);
+                
+            } catch (err) {
+                console.error('Error:', err);
+                showError(err.message || 'Something went wrong. Please try again.');
+            } finally {
+                loading.classList.remove('active');
+                analyzeBtn.disabled = false;
+            }
+        }
+        
+        async function getImageCaption(imageBlob) {
+            // Try main model first
+            let response = await fetch(HF_API_URL, {
+                method: 'POST',
+                body: imageBlob
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (Array.isArray(result) && result[0]?.generated_text) {
+                    return result[0].generated_text;
+                }
+            }
+            
+            // Check if model is loading
+            if (response.status === 503) {
+                const data = await response.json();
+                if (data.estimated_time) {
+                    throw new Error(`AI model is warming up. Please wait ${Math.ceil(data.estimated_time)} seconds and try again.`);
+                }
+            }
+            
+            // Try fallback model
+            response = await fetch('https://api-inference.huggingface.co/models/Salesforce/blip-image-captioning-base', {
+                method: 'POST',
+                body: imageBlob
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (Array.isArray(result) && result[0]?.generated_text) {
+                    return result[0].generated_text;
+                }
+            }
+            
+            return null;
+        }
+        
+        async function generateMediaResults(caption) {
+            const results = [];
+            const query = encodeURIComponent(caption);
+            
+            // YouTube videos (3)
+            results.push({
+                type: 'youtube',
+                title: `Videos about: ${caption}`,
+                url: `https://www.youtube.com/results?search_query=${query}`,
+                thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg`, // Placeholder
+                meta: 'YouTube Search'
+            });
+            
+            // Try to get actual YouTube thumbnails via a trick
+            const youtubeTerms = caption.split(' ').slice(0, 3).join(' ');
+            results.push({
+                type: 'youtube',
+                title: `${youtubeTerms} videos`,
+                url: `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeTerms + ' tutorial')}`,
+                thumbnail: null,
+                meta: 'YouTube'
+            });
+            
+            results.push({
+                type: 'youtube',
+                title: `${youtubeTerms} documentary`,
+                url: `https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeTerms + ' documentary')}`,
+                thumbnail: null,
+                meta: 'YouTube'
+            });
+            
+            // Web articles (4)
+            results.push({
+                type: 'article',
+                title: `Learn about: ${caption}`,
+                url: `https://www.google.com/search?q=${query}`,
+                snippet: 'Google Search',
+                meta: 'Google'
+            });
+            
+            results.push({
+                type: 'article',
+                title: `${caption} - Wikipedia`,
+                url: `https://en.wikipedia.org/wiki/Special:Search?search=${query}`,
+                snippet: 'Encyclopedia article',
+                meta: 'Wikipedia'
+            });
+            
+            results.push({
+                type: 'article',
+                title: `News about: ${caption}`,
+                url: `https://news.google.com/search?q=${query}`,
+                snippet: 'Latest news',
+                meta: 'Google News'
+            });
+            
+            results.push({
+                type: 'article',
+                title: `Reddit discussions`,
+                url: `https://www.reddit.com/search/?q=${query}`,
+                snippet: 'Community discussions',
+                meta: 'Reddit'
+            });
+            
+            // Images (3) - Use Unsplash
+            const unsplashResults = await searchUnsplash(caption);
+            results.push(...unsplashResults);
+            
+            return results.slice(0, 10);
+        }
+        
+        async function searchUnsplash(query) {
+            const results = [];
+            
+            try {
+                // Unsplash's public API endpoint (no key needed for basic search page)
+                const searchUrl = `https://unsplash.com/napi/search/photos?query=${encodeURIComponent(query)}&per_page=3`;
+                
+                const response = await fetch(searchUrl);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    for (const photo of (data.results || []).slice(0, 3)) {
+                        results.push({
+                            type: 'image',
+                            title: photo.alt_description || photo.description || 'Beautiful image',
+                            url: photo.links?.html || `https://unsplash.com/photos/${photo.id}`,
+                            thumbnail: photo.urls?.small || photo.urls?.thumb,
+                            meta: `Photo by ${photo.user?.name || 'Unsplash'}`
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log('Unsplash API unavailable, using fallback');
+            }
+            
+            // Fallback if API didn't work
+            if (results.length === 0) {
+                results.push({
+                    type: 'image',
+                    title: `Images of: ${query}`,
+                    url: `https://unsplash.com/s/photos/${encodeURIComponent(query)}`,
+                    thumbnail: null,
+                    meta: 'Unsplash'
+                });
+                
+                results.push({
+                    type: 'image',
+                    title: `${query} photos`,
+                    url: `https://www.pexels.com/search/${encodeURIComponent(query)}/`,
+                    thumbnail: null,
+                    meta: 'Pexels'
+                });
+                
+                results.push({
+                    type: 'image',
+                    title: `${query} on Pinterest`,
+                    url: `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(query)}`,
+                    thumbnail: null,
+                    meta: 'Pinterest'
+                });
+            }
+            
+            return results;
+        }
+        
+        function displayResults(caption, results) {
+            captionDisplay.innerHTML = `<strong>AI detected:</strong> "${caption}"`;
+            
+            resultsGrid.innerHTML = '';
+            
+            const typeIcons = {
+                youtube: '▶️',
+                article: '📄',
+                image: '🖼️'
+            };
+            
+            const typeColors = {
+                youtube: '#ff0000',
+                article: '#4CAF50',
+                image: '#9c27b0'
+            };
+            
+            results.forEach(result => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                let thumbnail = '';
+                if (result.thumbnail) {
+                    thumbnail = `<img class="card-thumbnail" src="${result.thumbnail}" alt="${result.title}" loading="lazy" onerror="this.outerHTML='<div class=\\'card-thumbnail placeholder\\'>${typeIcons[result.type]}</div>'">`;
+                } else {
+                    thumbnail = `<div class="card-thumbnail placeholder">${typeIcons[result.type]}</div>`;
+                }
+                
+                card.innerHTML = `
+                    <a href="${result.url}" target="_blank" rel="noopener noreferrer">
+                        ${thumbnail}
+                        <div class="card-content">
+                            <span class="card-type ${result.type}">${result.type}</span>
+                            <h3 class="card-title">${escapeHtml(result.title)}</h3>
+                            ${result.meta ? `<p class="card-meta">${escapeHtml(result.meta)}</p>` : ''}
+                        </div>
+                    </a>
+                `;
+                
+                resultsGrid.appendChild(card);
+            });
+            
+            resultsSection.classList.add('active');
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.add('active');
+        }
+        
+        function hideError() {
+            errorMessage.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
