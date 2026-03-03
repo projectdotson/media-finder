@@ -184,7 +184,7 @@
             <h1>🔍 Media Finder</h1>
             <p class="subtitle">Upload a photo and discover related content across the web</p>
             <div class="model-status loading" id="model-status">
-                ⏳ Loading AI model... (first time ~1-2 min, 400MB download)
+                ⏳ Loading AI model... (first time ~30-60s)
                 <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
             </div>
         </header>
@@ -265,10 +265,13 @@
         // Load model
         async function loadModel() {
             try {
-                captioner = await pipeline('image-to-text', 'Xenova/blip-image-captioning-large', {
+                captioner = await pipeline('image-to-text', 'Xenova/blip-image-captioning-base', {
                     progress_callback: (progress) => {
                         if (progress.status === 'progress' && progress.progress) {
                             progressFill.style.width = `${Math.round(progress.progress)}%`;
+                        }
+                        if (progress.status === 'download') {
+                            modelStatus.querySelector('span') || (modelStatus.innerHTML = `⏳ Downloading: ${progress.file || 'model files'}... <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>`);
                         }
                     }
                 });
@@ -280,7 +283,7 @@
             } catch (e) {
                 console.error('Model load error:', e);
                 modelStatus.className = 'model-status error';
-                modelStatus.innerHTML = '❌ Failed to load AI model. Try refreshing the page.';
+                modelStatus.innerHTML = '❌ Failed to load AI model. <button onclick="location.reload()" style="background:#e94560;color:white;border:none;padding:5px 15px;border-radius:5px;cursor:pointer;margin-left:10px;">Retry</button>';
             }
         }
         
